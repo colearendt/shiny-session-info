@@ -1,6 +1,8 @@
 library(shiny)
+library(listviewer)
 
-ui <- fluidPage(
+
+ui <- function(req) {fluidPage(
     
     titlePanel("Shiny Session Info"),
     
@@ -12,10 +14,12 @@ ui <- fluidPage(
             h2("session$clientData"),
             verbatimTextOutput("clientdataText"),
             h2("session"),
-            verbatimTextOutput("sessionInfo") 
+            verbatimTextOutput("sessionInfo"),
+            h2("Request Object"),
+            jsonedit(as.list(req)),
         )
     )
-)
+)}
 
 server <- function(input, output, session) {
     
@@ -34,6 +38,16 @@ server <- function(input, output, session) {
         calt_clean_2 <- calt_clean[which(!calt_class %in% c("reactivevalues", "shinyoutput"))]
         calt_final <- calt_clean_2
         calt_names <- names(calt_final)
+        
+        calt_req <- as.list(calt$request)
+        print(names(calt_req))
+        print(as.list(calt_req$HEADERS))
+        
+        calt_final <- as.list(calt_req)
+        print(lapply(calt_final, typeof))
+        calt_final <- calt_final[which(as.character(lapply(calt_final, typeof)) == "character")]
+        calt_names <- names(calt_final)
+        
         
         all_calt <- lapply(calt_names, function(name){
             paste(name, as.character(calt_final[[name]]), sep = " = ")
