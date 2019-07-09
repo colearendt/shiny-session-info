@@ -1,29 +1,43 @@
 library(shiny)
 library(listviewer)
+library(dplyr)
+library(tidyr)
 
 
 ui <- function(req) {fluidPage(
     
-    titlePanel("Shiny Session Info"),
+    titlePanel("System and Shiny info"),
     
-    sidebarLayout(
-        sidebarPanel(
-        ),
-        
+    fluidRow(
         mainPanel(
-            h2("session$clientData"),
+            h2("Sys.info()"),
+            tableOutput("sys_info"),
+            h2("system('env')"),
+            tableOutput("system_env"),
+            h2("Shiny: session$clientData"),
             jsoneditOutput("clientdataText"),
-            h2("session"),
+            h2("Shiny: session"),
             jsoneditOutput("sessionInfo"),
-            h2("UI req object"),
-            jsonedit(as.list(req)
-                     , mode = 'view'
-                     , modes = list('view'))
+            h2("Shiny: UI req object"),
+            jsonedit(as.list(req), mode = 'view', modes = list('view'))
         )
     )
 )}
 
 server <- function(input, output, session) {
+    
+    output$sys_info <- renderTable({
+      df <- as_tibble(as.list(Sys.info()))
+      df <- as_tibble(cbind(Name = names(df), t(df)))
+      df <- df %>% rename(Value = V2)
+      df
+    })
+    
+    output$system_env <- renderTable({ 
+      df <- as_tibble(system2("env", stdout = TRUE))
+      df <- df %>% separate(col = value, c("name", "value"), sep = "=", extra = "merge", fill = "right")
+      df
+    })
     
     clean_environ <- function(environ){
         if (is.environment(environ)) {
@@ -38,12 +52,10 @@ server <- function(input, output, session) {
     # Store in a convenience variable
     cdata <- session$clientData
     
-    
     output$sessionInfo <- renderJsonedit({
         calt <- as.list(session)
         
-        
-    #browser()
+        # browser()
         calt_type <- lapply(calt, typeof)
         calt_clean <- calt[which(!calt_type %in% c("closure"))]
         calt_clean <- lapply(calt_clean, clean_environ)
@@ -52,7 +64,7 @@ server <- function(input, output, session) {
         calt_final <- calt_clean_2
         calt_names <- names(calt_final)
         
-        print(lapply(calt_final, typeof))
+        # print(lapply(calt_final, typeof))
         
        jsonedit(calt_final
                 , mode = 'view'
@@ -67,4 +79,3 @@ server <- function(input, output, session) {
 
 # Run the application 
 shinyApp(ui = ui, server = server)
-
