@@ -30,7 +30,10 @@ safe_list <- function(.list) {
   return(obj)
 }
 
-ui <- function(req) {fluidPage(
+sessionInfoModuleUI <- function(id, req) {
+    ns <- NS(id)
+
+    fluidPage(
     
     titlePanel("Shiny Session Info"),
     
@@ -46,9 +49,9 @@ ui <- function(req) {fluidPage(
         
         mainPanel(
             h2("session$clientData"),
-            jsoneditOutput("clientdataText"),
+            jsoneditOutput(ns("clientdataText")),
             h2("session"),
-            jsoneditOutput("sessionInfo"),
+            jsoneditOutput(ns("sessionInfo")),
             h2("UI req object"),
             jsonedit(
               safe_list(req)
@@ -57,9 +60,11 @@ ui <- function(req) {fluidPage(
               )
         )
     )
-)}
+)
+}
 
-server <- function(input, output, session) {
+sessionInfoModule <- function(input, output, session, actual_session) {
+    ns <- session$ns
     
     clean_environ <- function(environ){
         if (is.environment(environ)) {
@@ -77,7 +82,7 @@ server <- function(input, output, session) {
     
     output$sessionInfo <- renderJsonedit({
         tryCatch({
-          calt <- as.list(session)
+          calt <- as.list(actual_session)
           
           
           calt_type <- lapply(calt, typeof)
@@ -106,6 +111,15 @@ server <- function(input, output, session) {
     })
 }
 
-# Run the application 
-shinyApp(ui = ui, server = server)
 
+ui <- function(req) {
+    fluidPage(
+  sessionInfoModuleUI("testing", req)
+)
+}
+
+server <- function(input, output, session) {
+  callModule(sessionInfoModule, "testing", session)
+}
+
+shinyApp(ui = ui, server = server)
