@@ -1,6 +1,34 @@
 library(shiny)
 library(listviewer)
 
+safe_list <- function(.list) {
+  tryCatch({
+    obj <- as.list(.list)
+    obj <- lapply(obj, function(x){
+      if (is.character(x) && nchar(x) > 300) {
+        return(
+          paste0(
+            substr(x, 1, pmin(nchar(x), 300)),
+            "... [[ truncated for space ]]"
+            )
+        )
+      } else {
+        return(x)
+      }
+    })
+  }, error = function(e) {
+    message(e)
+    obj <- list(
+      "ERROR",
+      e,
+      "Please refresh the page to see if the error persists",
+      "If so, submit an issue here:",
+      "https://github.com/colearendt/shiny-session-info"
+    )
+  })
+  
+  return(obj)
+}
 
 ui <- function(req) {fluidPage(
     
@@ -8,6 +36,12 @@ ui <- function(req) {fluidPage(
     
     sidebarLayout(
         sidebarPanel(
+          h3("An Example App for Exploring Shiny"),
+          p("If you encounter any issues with this application, please submit bugs to ", a("GitHub", href = "https://github.com/colearendt/shiny-session-info")),
+          p("Use the listviewers to the right for exploring Shiny session state"),
+          br(),
+          h4("Important Notes"),
+          p("This app has shown fragility with a large number of groups. If you see errors and have a large number of groups, please refresh")
         ),
         
         mainPanel(
@@ -16,9 +50,11 @@ ui <- function(req) {fluidPage(
             h2("session"),
             jsoneditOutput("sessionInfo"),
             h2("UI req object"),
-            jsonedit(as.list(req)
-                     , mode = 'view'
-                     , modes = list('view'))
+            jsonedit(
+              safe_list(req)
+              , mode = 'view'
+              , modes = list('view')
+              )
         )
     )
 )}
@@ -40,19 +76,24 @@ server <- function(input, output, session) {
     
     
     output$sessionInfo <- renderJsonedit({
-        calt <- as.list(session)
-        
-        
-    #browser()
-        calt_type <- lapply(calt, typeof)
-        calt_clean <- calt[which(!calt_type %in% c("closure"))]
-        calt_clean <- lapply(calt_clean, clean_environ)
-        calt_class <- lapply(calt_clean, class)
-        calt_clean_2 <- calt_clean[which(!calt_class %in% c("reactivevalues", "shinyoutput"))]
-        calt_final <- calt_clean_2
-        calt_names <- names(calt_final)
-        
-        print(lapply(calt_final, typeof))
+        tryCatch({
+          calt <- as.list(session)
+          
+          
+          calt_type <- lapply(calt, typeof)
+          calt_clean <- calt[which(!calt_type %in% c("closure"))]
+          calt_clean <- lapply(calt_clean, clean_environ)
+          calt_class <- lapply(calt_clean, class)
+          calt_clean_2 <- calt_clean[which(!calt_class %in% c("reactivevalues", "shinyoutput"))]
+          calt_final <- calt_clean_2
+          calt_names <- names(calt_final)
+          
+          print(lapply(calt_final, typeof))
+        },
+    error = function(e) {
+      message(e)
+      calt_final <- list("ERROR occurred", e, "Please refresh the page")
+    })
         
        jsonedit(calt_final
                 , mode = 'view'
