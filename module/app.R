@@ -1,7 +1,7 @@
 library(shiny)
 library(listviewer)
 
-module_ui <- function(id, req) {
+sessionInfoModuleUI <- function(id, req) {
     ns <- NS(id)
 
     fluidPage(
@@ -25,8 +25,9 @@ module_ui <- function(id, req) {
     )
 }
 
-module_server <- function(input, output, session, actual_session) {
+sessionInfoModule <- function(input, output, session, actual_session) {
     ns <- session$ns
+    output$test <- renderText("hi")
     
     clean_environ <- function(environ){
         if (is.environment(environ)) {
@@ -72,12 +73,12 @@ module_server <- function(input, output, session, actual_session) {
 
 ui <- function(req) {
     fluidPage(
-  module_ui("testing", req)
+  sessionInfoModuleUI("testing", req)
 )
 }
 
 server <- function(input, output, session) {
-  callModule(module_server, "testing", session)
+  callModule(sessionInfoModule, "testing", session)
 }
 
 shinyApp(ui = ui, server = server)
