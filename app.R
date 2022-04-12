@@ -1,8 +1,5 @@
 library(shiny)
 library(listviewer)
-library(dplyr)
-library(tidyr)
-
 
 ui <- function(req) {fluidPage(
     
