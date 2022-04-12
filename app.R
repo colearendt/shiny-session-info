@@ -32,7 +32,7 @@ safe_list <- function(.list) {
 
 ui <- function(req) {fluidPage(
     
-    titlePanel("Shiny Session Info"),
+    titlePanel("System and Shiny info"),
     
     sidebarLayout(
         sidebarPanel(
@@ -45,11 +45,15 @@ ui <- function(req) {fluidPage(
         ),
         
         mainPanel(
-            h2("session$clientData"),
+            h2("Sys.info()"),
+            tableOutput("sys_info"),
+            h2("Sys.getenv(names = TRUE)"),
+            tableOutput("system_env"),
+            h2("Shiny: session$clientData"),
             jsoneditOutput("clientdataText"),
-            h2("session"),
+            h2("Shiny: session"),
             jsoneditOutput("sessionInfo"),
-            h2("UI req object"),
+            h2("Shiny: UI req object"),
             jsonedit(
               safe_list(req)
               , mode = 'view'
@@ -60,6 +64,18 @@ ui <- function(req) {fluidPage(
 )}
 
 server <- function(input, output, session) {
+    
+    output$sys_info <- renderTable({
+      df <- as_tibble(as.list(Sys.info()))
+      df <- as_tibble(cbind(Name = names(df), t(df)))
+      df <- df %>% rename(Value = V2)
+      df
+    })
+    
+    output$system_env <- renderTable({ 
+      s <- Sys.getenv(names = TRUE)
+      data.frame(name = names(s), value = as.character(s))
+    })
     
     clean_environ <- function(environ){
         if (is.environment(environ)) {
@@ -74,7 +90,6 @@ server <- function(input, output, session) {
     # Store in a convenience variable
     cdata <- session$clientData
     
-    
     output$sessionInfo <- renderJsonedit({
         tryCatch({
           calt <- as.list(session)
@@ -88,7 +103,7 @@ server <- function(input, output, session) {
           calt_final <- calt_clean_2
           calt_names <- names(calt_final)
           
-          print(lapply(calt_final, typeof))
+          # print(lapply(calt_final, typeof))
         },
     error = function(e) {
       message(e)
@@ -108,4 +123,3 @@ server <- function(input, output, session) {
 
 # Run the application 
 shinyApp(ui = ui, server = server)
-
