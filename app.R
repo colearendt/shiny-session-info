@@ -12,7 +12,7 @@ ui <- function(req) {fluidPage(
         mainPanel(
             h2("Sys.info()"),
             tableOutput("sys_info"),
-            h2("system('env')"),
+            h2("Sys.getenv(names = TRUE)"),
             tableOutput("system_env"),
             h2("Shiny: session$clientData"),
             jsoneditOutput("clientdataText"),
@@ -34,9 +34,8 @@ server <- function(input, output, session) {
     })
     
     output$system_env <- renderTable({ 
-      df <- as_tibble(system2("env", stdout = TRUE))
-      df <- df %>% separate(col = value, c("name", "value"), sep = "=", extra = "merge", fill = "right")
-      df
+      s <- Sys.getenv(names = TRUE)
+      data.frame(name = names(s), value = as.character(s))
     })
     
     clean_environ <- function(environ){
