@@ -66,10 +66,11 @@ ui <- function(req) {fluidPage(
 server <- function(input, output, session) {
     
     output$sys_info <- renderTable({
-      df <- as_tibble(as.list(Sys.info()))
-      df <- as_tibble(cbind(Name = names(df), t(df)))
-      df <- df %>% rename(Value = V2)
-      df
+      dat <- as.data.frame(as.list(Sys.info()))
+      dat <- as.data.frame(cbind(Name = names(dat), t(dat)))
+      dat$Value <- dat$V2
+      dat$V2 <- NULL
+      dat
     })
     
     output$system_env <- renderTable({ 
